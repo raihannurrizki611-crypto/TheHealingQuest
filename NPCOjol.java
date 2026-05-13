@@ -40,10 +40,9 @@ public class NPCOjol extends NPC {
     private boolean playerSedangBicara = false;
 
     // ── Posisi ────────────────────────────────────────────────────────────
-    private static final int     OJOL_X      = 430;
-    private static final boolean FACING_LEFT = true;
-    // Motor diletakkan di sebelah kanan ojol
-    private static final int     MOTOR_OFFSET_X = 80; // jarak motor dari ojol
+    private static final int  OJOL_X         = 430;
+    private static final int  MOTOR_OFFSET_X = 80;   // jarak motor dari ojol
+    private boolean           facingLeft     = true;  // dinamis — mengikuti posisi player
 
     // ── Constructor ───────────────────────────────────────────────────────
     public NPCOjol(AssetLoader assets) {
@@ -62,6 +61,13 @@ public class NPCOjol extends NPC {
     }
 
     // ── Setter mode sprite ────────────────────────────────────────────────
+    /** Ojol berbalik menghadap ke arah player */
+    public void updateFacing(int playerX) {
+        // facingLeft = true → sprite di-flip (mirror)
+        // Balik kondisi sesuai arah default sprite Ojol
+        facingLeft = playerX > OJOL_X;
+    }
+
     public void setSpriteMode(SpriteMode mode) {
         if (this.spriteMode == mode) return;
         this.spriteMode = mode;
@@ -97,19 +103,20 @@ public class NPCOjol extends NPC {
     // ── POLIMORFISME : @Override draw() ──────────────────────────────────
     @Override
     public void draw(Graphics2D g2d, int W, int H) {
-        int npcH = H / 3;
-        int npcW = npcH;
-        int npcY = H - npcH - (H / 12);
+        int npcH = (int)(H * 0.40);
+        int npcW = (int)(npcH * 0.79);
+        int npcY = H - npcH - (int)(H * 0.09);
+        int groundY = H - (int)(H * 0.09); // garis tanah
 
         g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
                              RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
-        // ── Gambar motor terlebih dahulu (di belakang ojol) ───────────────
+        // ── Gambar motor (posisi kaki motor di garis tanah) ───────────────
         if (motorVisible && motorImg != null) {
             int motorW = (int)(npcW * 1.4);
             int motorH = (int)(npcH * 0.7);
             int motorX = OJOL_X + MOTOR_OFFSET_X;
-            int motorY = H - motorH - (H / 12) + (npcH - motorH);
+            int motorY = groundY - motorH;
             g2d.drawImage(motorImg, motorX, motorY, motorW, motorH, null);
         }
 
@@ -121,10 +128,11 @@ public class NPCOjol extends NPC {
 
         if (active == null || idx >= active.length || active[idx] == null) return;
 
-        if (FACING_LEFT) {
+        if (facingLeft) {
             g2d.drawImage(active[idx], OJOL_X + npcW, npcY, -npcW, npcH, null);
         } else {
             g2d.drawImage(active[idx], OJOL_X, npcY, npcW, npcH, null);
         }
     }
 }
+
