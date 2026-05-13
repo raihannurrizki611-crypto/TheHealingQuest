@@ -1,19 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-/**
- *
- * @author lenovo
- */
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-/**
- *
- * @author lenovo
- */
 package com.mycompany.thehealingquest;
 
 import java.awt.*;
@@ -40,6 +24,11 @@ public class Dialogsystem {
     private int typeDelay = 0;
     private static final int TYPE_SPEED = 2;
 
+    // ── Cooldown spasi (5 detik = 300 tick @ 60fps) ───────────────────────
+    private int  spaceCooldown    = 0;
+    private static final int SPACE_COOLDOWN_MAX = 60; // 300 tick × 16ms ≈ 5 detik
+    private boolean canSkip       = true; // true = boleh tekan spasi
+
     // ── Asset ─────────────────────────────────────────────────────────────
     private BufferedImage textBoxImg;
     private BufferedImage phoneImg;
@@ -64,30 +53,56 @@ public class Dialogsystem {
         this.charIndex    = 0;
         this.typeDelay    = 0;
         this.currentState = lineStates[0];
+        this.spaceCooldown = 0;   // reset cooldown saat dialog baru mulai
+        this.canSkip       = true; // boleh langsung tekan spasi di awal
     }
 
     // ── Next (SPASI) ──────────────────────────────────────────────────────
     public void nextLine() {
+        // Kalau typewriter belum selesai → tampilkan teks penuh dulu
+        // Tidak perlu tunggu cooldown untuk ini
         if (charIndex < lines[currentIndex].length()) {
             charIndex = lines[currentIndex].length();
             return;
         }
+
+        // Cek cooldown — belum boleh lanjut
+        if (!canSkip) return;
+
+        // Lanjut ke baris berikutnya + mulai cooldown
         currentIndex++;
         if (currentIndex >= lines.length) {
             currentState = DialogState.FINISHED;
             return;
         }
-        currentState = lineStates[currentIndex];
-        charIndex    = 0;
-        typeDelay    = 0;
+        currentState   = lineStates[currentIndex];
+        charIndex      = 0;
+        typeDelay      = 0;
+        canSkip        = false;          // kunci spasi
+        spaceCooldown  = SPACE_COOLDOWN_MAX; // mulai hitung mundur
     }
 
     public void update() {
         if (currentState == DialogState.FINISHED) return;
+
+        // Hitung mundur cooldown spasi
+        if (spaceCooldown > 0) {
+            spaceCooldown--;
+            if (spaceCooldown <= 0) canSkip = true; // buka kunci spasi
+        }
+
+        // Typewriter
         if (charIndex >= lines[currentIndex].length()) return;
         typeDelay++;
         if (typeDelay >= TYPE_SPEED) { charIndex++; typeDelay = 0; }
     }
+
+    /** Sisa cooldown dalam detik (dipakai untuk tampilkan indikator) */
+    public int getCooldownSeconds() {
+        return (int) Math.ceil(spaceCooldown / 60.0);
+    }
+
+    public boolean isCanSkip() { return canSkip; }
 
     // ── Getter speaker saat ini ───────────────────────────────────────────
     /** Dipakai Game2D untuk tahu siapa yang sedang bicara (untuk sprite Radja) */
@@ -104,7 +119,10 @@ public class Dialogsystem {
             case DIALOG:   drawDialog(g2d, W, H);   break;
             case WA_CHAT:  drawWAChat(g2d, W, H);   break;
         }
-        if (charIndex >= lines[currentIndex].length()) drawSpaceHint(g2d, W, H);
+        // Tampilkan hint/countdown setiap frame setelah teks selesai diketik
+        if (charIndex >= lines[currentIndex].length()) {
+            drawSpaceHint(g2d, W, H);
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -125,9 +143,12 @@ public class Dialogsystem {
         drawWrapped(g2d, getCurrentText(), W/2, H/2 + 4, (int)(W * 0.65));
     }
 
-    // ── FIX 1: Text stays inside the text box ────────────────────────────
     private void drawDialog(Graphics2D g2d, int W, int H) {
-        int boxH = H / 4, boxY = H - boxH - 10, boxX = 10, boxW = W - 20;
+        // TextBox di bagian bawah layar dengan margin
+        int boxH = (int)(H * 0.28);     // tinggi box ~28% layar
+        int boxX = 10;
+        int boxW = W - 20;
+        int boxY = H - boxH - 8;        // posisi Y dari bawah
 
         if (textBoxImg != null) {
             g2d.drawImage(textBoxImg, boxX, boxY, boxW, boxH, null);
@@ -141,25 +162,24 @@ public class Dialogsystem {
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
                              RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
-        // ── Padding inside the text box image ────────────────────────────
-        // Increase padTop if your TextBox.png has a thick top border,
-        // e.g. try values between 35 and 65 until it looks right.
-        int padLeft = 30;
-        int padTop  = 50;
-
         String speaker = speakers[currentIndex];
+
+        // Padding dalam box — nama pembicara di atas, teks di bawahnya
+        int paddingLeft = 30;
+        int nameY       = boxY + 28;          // nama ~28px dari atas box
+        int textY       = speaker.isEmpty()
+                          ? boxY + 32         // tanpa nama: teks mulai lebih atas
+                          : boxY + 50;        // dengan nama: teks mulai setelah nama
+
         if (!speaker.isEmpty()) {
             g2d.setFont(NAME_FONT);
             g2d.setColor(new Color(255, 220, 100));
-            g2d.drawString(speaker, boxX + padLeft, boxY + padTop);
+            g2d.drawString(speaker, boxX + paddingLeft, nameY);
         }
 
         g2d.setFont(DIALOG_FONT);
         g2d.setColor(Color.WHITE);
-
-        // Text line sits 22px below the speaker name (or at padTop if no speaker)
-        int textY = boxY + padTop + (speaker.isEmpty() ? 0 : 22);
-        drawWrapped(g2d, getCurrentText(), boxX + padLeft, textY, boxW - padLeft * 2);
+        drawWrapped(g2d, getCurrentText(), boxX + paddingLeft, textY, boxW - paddingLeft * 2);
     }
 
     // ── WA Chat: tampilkan Phone.png + teks chat di atasnya ───────────────
@@ -224,10 +244,21 @@ public class Dialogsystem {
 
     private void drawSpaceHint(Graphics2D g2d, int W, int H) {
         g2d.setFont(new Font("Arial", Font.BOLD, 11));
-        g2d.setColor(new Color(200, 200, 200, 180));
-        String hint = "[ SPASI ] lanjut";
-        int hw = g2d.getFontMetrics().stringWidth(hint);
-        g2d.drawString(hint, W - hw - 20, H - 16);
+
+        if (!canSkip) {
+            // Tampilkan countdown
+            int sisa = getCooldownSeconds();
+            g2d.setColor(new Color(180, 180, 180, 120)); // redup = tidak bisa ditekan
+            String countdown = "[ " + sisa + "s ]";
+            int cw = g2d.getFontMetrics().stringWidth(countdown);
+            g2d.drawString(countdown, W - cw - 20, H - 16);
+        } else {
+            // Bisa ditekan — tampilkan normal
+            g2d.setColor(new Color(200, 200, 200, 200));
+            String hint = "[ SPASI ] lanjut";
+            int hw = g2d.getFontMetrics().stringWidth(hint);
+            g2d.drawString(hint, W - hw - 20, H - 16);
+        }
     }
 
     // ── Helper ────────────────────────────────────────────────────────────
