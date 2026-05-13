@@ -12,10 +12,6 @@ import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.IOException;
 
-/**
- * AssetLoader.java — Load semua gambar game.
- * KONSEP OOP : Enkapsulasi — field private + getter
- */
 public class AssetLoader {
 
     // ── Player ────────────────────────────────────────────────────────────
@@ -49,9 +45,9 @@ public class AssetLoader {
     private BufferedImage phoneScreen;
 
     // ── Jumlah frame ──────────────────────────────────────────────────────
-    private static final int WALK_COUNT        = 6;
-    private static final int IDLE_COUNT        = 4;
-    private static final int RADJA_IDLE_COUNT  = 6;
+    private static final int WALK_COUNT        = 12;
+    private static final int IDLE_COUNT        = 8;
+    private static final int RADJA_IDLE_COUNT  = 12;
     private static final int RADJA_TALK_COUNT  = 2;
     private static final int RADJA_MARAH_COUNT = 2;
     private static final int OJOL_SANTAI_COUNT = 4;
