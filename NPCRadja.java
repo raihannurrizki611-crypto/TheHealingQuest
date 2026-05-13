@@ -1,22 +1,7 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-/**
- *
- * @author lenovo
- */
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-/**
- *
- * @author lenovo
- */
 package com.mycompany.thehealingquest;
 
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 
 /**
@@ -37,17 +22,15 @@ public class NPCRadja extends NPC {
     public enum SpriteMode { IDLE, BICARA, MARAH }
 
     // ── Field private ─────────────────────────────────────────────────────
-    private SpriteMode     spriteMode = SpriteMode.IDLE;
-    private BufferedImage[] idleFrames;   // Radja_Idle1-6 (merokok)
-    private BufferedImage[] bicaraFrames; // Radja_Talk1-2
-    private BufferedImage[] marahFrames;  // Radja_Marah1-2
+    private SpriteMode      spriteMode = SpriteMode.IDLE;
+    private BufferedImage[] idleFrames;    // Radja_Idle1-6 (merokok)
+    private BufferedImage[] bicaraFrames;  // Radja_Talk1-2
+    private BufferedImage[] marahFrames;   // Radja_Marah1-2
 
-    // ── Siapa yang sedang bicara (untuk ganti frame) ──────────────────────
     private boolean playerSedangBicara = false;
+    private boolean facingLeft         = true; // default menghadap kiri ke arah player
 
-    // ── FIX 2: facingLeft now dynamic instead of hardcoded constant ───────
     private static final int RADJA_X = 520;
-    private boolean facingLeft = true; // default: faces left toward player start
 
     // ── Constructor ───────────────────────────────────────────────────────
     public NPCRadja(AssetLoader assets) {
@@ -57,20 +40,18 @@ public class NPCRadja extends NPC {
             SceneIndex.POS_RONDA.getIndex(),
             assets.getRadjaIdleFrames(),
             14,
-            new String[]{}   // dialog diurus StoryManager
+            new String[]{}
         );
         this.idleFrames   = assets.getRadjaIdleFrames();
         this.bicaraFrames = assets.getRadjaTalkFrames();
         this.marahFrames  = assets.getRadjaMarahFrames();
     }
 
-    // ── FIX 2: Call this every frame from Game2D to update facing ─────────
-    /**
-     * Updates which direction Radja faces based on the player's position.
-     * Radja faces left when the player is to his left, right when to his right.
-     */
+    // ── Update arah hadap sesuai posisi player ────────────────────────────
     public void updateFacing(int playerX) {
-        facingLeft = playerX < RADJA_X;
+        // facingLeft = true → sprite di-flip (mirror)
+        // Balik kondisi sesuai arah default sprite Radja
+        facingLeft = playerX > RADJA_X;
     }
 
     // ── Setter mode sprite ────────────────────────────────────────────────
@@ -86,57 +67,59 @@ public class NPCRadja extends NPC {
     }
 
     /**
-     * Saat mode BICARA, frame 0 = Radja bicara, frame 1 = Player bicara.
-     * Dipanggil dari Game2D setiap kali ganti speaker.
+     * Saat mode BICARA:
+     * frame 0 = Radja bicara, frame 1 = Player bicara (Radja diam).
      */
     public void setPlayerSedangBicara(boolean playerBicara) {
         if (spriteMode != SpriteMode.BICARA) return;
         this.playerSedangBicara = playerBicara;
-        // Frame 0 = Radja bicara, Frame 1 = Player bicara (Radja diam)
         setCurrentFrame(playerBicara ? 1 : 0);
         setFrameDelay(0);
     }
 
     public SpriteMode getSpriteMode() { return spriteMode; }
+    public int        getRadjaX()     { return RADJA_X; }
+
+    // ── POLIMORFISME : @Override update() ────────────────────────────────
+    @Override
+    public void update() {
+        // Mode BICARA dikontrol manual — tidak di-advance otomatis
+        if (spriteMode != SpriteMode.BICARA) advanceFrame();
+    }
 
     // ── POLIMORFISME : @Override draw() ──────────────────────────────────
     @Override
     public void draw(Graphics2D g2d, int W, int H) {
-        // Saat BICARA frame tidak di-advance otomatis (dikontrol manual)
         if (spriteMode != SpriteMode.BICARA) {
+            // Mode IDLE / MARAH — pakai helper dari NPC (ukuran H * 0.52)
             drawSprite(g2d, W, H, RADJA_X, facingLeft);
         } else {
+            // Mode BICARA — frame dikontrol manual
             drawSpriteManual(g2d, W, H, RADJA_X, facingLeft);
         }
     }
 
-    /** Draw frame saat ini tanpa advance (untuk mode BICARA) */
+    /**
+     * Draw frame saat ini tanpa advance (untuk mode BICARA).
+     * Ukuran SAMA dengan NPC.drawSprite() → H * 0.52
+     */
     private void drawSpriteManual(Graphics2D g2d, int W, int H,
                                    int npcX, boolean flipped) {
-        java.awt.image.BufferedImage[] active = getFrames();
+        BufferedImage[] active = getFrames();
         int idx = getCurrentFrame();
         if (active == null || idx >= active.length || active[idx] == null) return;
 
-        int npcH = H / 3;
-        int npcW = npcH;
-        int npcY = H - npcH - (H / 12);
+        // ── Ukuran konsisten dengan Player dan NPC lain ───────────────────
+        int npcH = (int)(H * 0.40);
+        int npcW = (int)(npcH * 0.79);
+        int npcY = H - npcH - (int)(H * 0.09);
 
-        g2d.setRenderingHint(
-            java.awt.RenderingHints.KEY_INTERPOLATION,
-            java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                             RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
         if (flipped)
             g2d.drawImage(active[idx], npcX + npcW, npcY, -npcW, npcH, null);
         else
             g2d.drawImage(active[idx], npcX, npcY, npcW, npcH, null);
-    }
-
-    // ── update() — hanya advance frame saat IDLE atau MARAH ──────────────
-    @Override
-    public void update() {
-        if (spriteMode != SpriteMode.BICARA) {
-            advanceFrame();
-        }
-        // Mode BICARA: frame dikontrol manual oleh setPlayerSedangBicara()
     }
 }
