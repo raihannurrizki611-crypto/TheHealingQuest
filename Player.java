@@ -45,7 +45,7 @@ public class Player extends Character {
         );
         this.walkFrames = assets.getWalkFrames();
         this.idleFrames = assets.getIdleFrames();
-        this.speed      = 4;
+        this.speed      = 7;
         this.moveLeft   = false;
         this.moveRight  = false;
         this.animState  = AnimState.IDLE;
@@ -109,9 +109,9 @@ public class Player extends Character {
         g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
                              RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
-        int charH = H / 3;
-        int charW = charH;
-        int charY = H - charH - (H / 12);
+        int charH = (int)(H * 0.42);          // sedikit lebih besar agar cocok dengan Depan Mesjid
+        int charW = (int)(charH * 0.79);      // rasio asli 912/1149 = 0.79
+        int charY = H - charH - (int)(H * 0.09); // posisi kaki di garis trotoar
         int charX = getX();
 
         if (isFacingLeft()) {
