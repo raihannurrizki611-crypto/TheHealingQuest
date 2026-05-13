@@ -45,24 +45,6 @@ public abstract class GameObject {
     public int getSceneIndex() { return sceneIndex; }
     public void setSceneIndex(int sceneIndex) { this.sceneIndex = sceneIndex; }
 
-    // ── Abstract Method (POLIMORFISME) ────────────────────────────────────
-    /**
-     * Update logika objek setiap tick game loop.
-     * Wajib di-override oleh Player, NPC, dan child class lainnya.
-     * Contoh: Player.update() → gerak kiri/kanan
-     *         NPC.update()    → advance frame animasi idle
-     */
     public abstract void update();
-
-    /**
-     * Gambar objek ke layar.
-     * Wajib di-override oleh setiap child class.
-     * Contoh: Player.draw() → gambar sprite player
-     *         NPCRadja.draw() → gambar sprite Radja di Pos Ronda
-     *
-     * @param g2d Graphics2D dari paintComponent Game2D
-     * @param W   lebar layar saat ini
-     * @param H   tinggi layar saat ini
-     */
     public abstract void draw(Graphics2D g2d, int W, int H);
 }
