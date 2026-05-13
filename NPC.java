@@ -99,9 +99,9 @@ public abstract class NPC extends Character {
         g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
                              RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
-        int npcH = H / 3;
-        int npcW = npcH;
-        int npcY = H - npcH - (H / 12);
+        int npcH = (int)(H * 0.40);           // sedikit lebih kecil dari player
+        int npcW = (int)(npcH * 0.79);        // rasio asli 912/1149 = 0.79
+        int npcY = H - npcH - (int)(H * 0.09);
 
         if (facingLeft) {
             g2d.drawImage(active[idx], npcX + npcW, npcY, -npcW, npcH, null);
