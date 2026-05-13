@@ -42,11 +42,20 @@ public class Game2D extends JPanel implements ActionListener, KeyListener {
     private boolean fadingOut       = true;
     private int     pendingSpawnX   = 60;
 
+    // ── Flag player visible ───────────────────────────────────────────────
+    private boolean playerVisible = false;
+
     // ── Flag trigger ──────────────────────────────────────────────────────
-    private boolean triggerRadja    = false;
-    private boolean triggerOjol     = false;
-    private boolean triggerNasgor   = false;
+    private boolean triggerRadja  = false;
+    private boolean triggerOjol   = false;
+    private boolean triggerNasgor = false;
     private static final int INTERACT_DIST = 140;
+
+    // ── Interaksi tombol E ────────────────────────────────────────────────
+    // nearNPC menunjukkan NPC mana yang sedang dekat dengan player
+    private enum NearNPC { NONE, RADJA, OJOL, NASGOR }
+    private NearNPC nearNPC    = NearNPC.NONE;
+    private boolean ePressReady = false; // true = player dekat NPC, siap tekan E
 
     // ── Layar ending ──────────────────────────────────────────────────────
     private boolean showEndingScreen = false;
@@ -311,15 +320,98 @@ public class Game2D extends JPanel implements ActionListener, KeyListener {
     // ═════════════════════════════════════════════════════════════════════
 
     // Tiba di Depan Mesjid + perpisahan Ojol
-    private static final String[] MASUK_1_3_LINES = {
+    // ── Masuk 1.3 — diantar Ojol (bantu ojol) ────────────────────────────
+    private static final String[] MASUK_1_3_NAIK_OJOL_LINES = {
         "Sampai juga di depan Mesjid. Aroma nasi goreng tercium dari kejauhan.",
         "Kang nuhun pisan udah nganterin",
         "Iya kang sama sama, saya dluan yaa kang. Assalamualaikum",
         "Waalaikumsalam, hati-hati kang!",
         "Ojol pun berlalu. Player berjalan mendekati warung Mang Nasgor."
     };
-    private static final String[] MASUK_1_3_SPEAKERS = {
+    private static final String[] MASUK_1_3_NAIK_OJOL_SPEAKERS = {
         "","Player","Ojol","Player",""
+    };
+
+    // ── Masuk 1.3 — jalan sendiri (bodo amat ojol) ───────────────────────
+    private static final String[] MASUK_1_3_JALAN_SENDIRI_LINES = {
+        "Huff, cape juga anjir jalan dari tadi",
+        "Untung aja tukang nasgor langganan gw masih buka"
+    };
+    private static final String[] MASUK_1_3_JALAN_SENDIRI_SPEAKERS = {
+        "Player","Player"
+    };
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  DIALOG KASUAL — interaksi dengan NPC yang bukan fokus cerita
+    // ═══════════════════════════════════════════════════════════════════
+
+    // ── Bagian 1.1 — interaksi kasual dengan Ojol ─────────────────────
+    private static final String[] KASUAL_11_OJOL_LINES = {
+        "Assalaamu'alaikum a, nuju naon?, naha teu acan uwih?",
+        "Eh waalaikumsalam a",
+        "Nya biasa weh, nuju nugguan orderan deui. 1 atau 2 orderan mah lumayan",
+        "Oh nya muhun atuh"
+    };
+    private static final String[] KASUAL_11_OJOL_SPEAKERS = {
+        "Player","Ojol","Ojol","Player"
+    };
+
+    // ── Bagian 1.1 — interaksi kasual dengan Nasgor ───────────────────
+    private static final String[] KASUAL_11_NASGOR_LINES = {
+        "Assalaamu'alaikum pak",
+        "Eh waalaikumsallam a, calik heula atuh a",
+        "Mangga mangga pak",
+        "Tos rame nu meser pak?",
+        "Karek ge buka atuh a",
+        "Oh nya atuh sing rame nu meser nya pa",
+        "Amiin"
+    };
+    private static final String[] KASUAL_11_NASGOR_SPEAKERS = {
+        "Player","Mang Nasgor","Player","Player","Mang Nasgor","Player","Mang Nasgor"
+    };
+
+    // ── Bagian 1.2 — interaksi kasual dengan Radja (tidak marah) ──────
+    private static final String[] KASUAL_12_RADJA_BAIK_LINES = {
+        "Pulang bro udah malam",
+        "Entar lah, pengen cari angin dulu",
+        "Oh iya tuh"
+    };
+    private static final String[] KASUAL_12_RADJA_BAIK_SPEAKERS = {
+        "Radja","Player","Radja"
+    };
+
+    // ── Bagian 1.2 — interaksi kasual dengan Radja (marah) ───────────
+    private static final String[] KASUAL_12_RADJA_MARAH_LINES = {
+        "Ngapain lo masih di sini?",
+        "Enggak, cuman pengen cari angin aja"
+    };
+    private static final String[] KASUAL_12_RADJA_MARAH_SPEAKERS = {
+        "Radja","Player"
+    };
+
+    // ── Bagian 1.2 — interaksi kasual dengan Nasgor ───────────────────
+    private static final String[] KASUAL_12_NASGOR_LINES = {
+        "Nasgor a?",
+        "Enggak dulu pak, masih belum lapar"
+    };
+    private static final String[] KASUAL_12_NASGOR_SPEAKERS = {
+        "Mang Nasgor","Player"
+    };
+
+    // ── Bagian 1.3 — interaksi kasual dengan Radja (tidak marah) ──────
+    // (sama dengan bagian 1.2)
+    // ── Bagian 1.3 — interaksi kasual dengan Radja (marah) ───────────
+    // (sama dengan bagian 1.2)
+
+    // ── Bagian 1.3 — interaksi kasual dengan Ojol ─────────────────────
+    private static final String[] KASUAL_13_OJOL_LINES = {
+        "Assalaamu'alaikum a, nuju naon?, naha teu acan uwih?",
+        "Eh waalaikumsalam a",
+        "Nya biasa weh, nuju nugguan orderan deui. 1 atau 2 orderan mah lumayan",
+        "Oh nya muhun atuh"
+    };
+    private static final String[] KASUAL_13_OJOL_SPEAKERS = {
+        "Player","Ojol","Ojol","Player"
     };
 
     // Dialog dengan Mang Nasgor
@@ -463,7 +555,7 @@ public class Game2D extends JPanel implements ActionListener, KeyListener {
         }
 
         if (!isCutscene) {
-            player.draw(g2d, W, H);
+            if (playerVisible) player.draw(g2d, W, H);
             if (currentScene == SceneIndex.POS_RONDA.getIndex())
                 npcRadja.draw(g2d, W, H);
             if (currentScene == SceneIndex.PEGUNUNGAN_MALAM.getIndex())
@@ -498,6 +590,11 @@ public class Game2D extends JPanel implements ActionListener, KeyListener {
         }
 
         stressSystem.draw(g2d, W, H);
+
+        // ── Indikator [E] Bicara di atas NPC ─────────────────────────────
+        if (gameState == GameState.PLAYING && ePressReady) {
+            drawInteractIndicator(g2d, W, H);
+        }
 
         if (gameState == GameState.INTRO || gameState == GameState.DIALOG)
             dialogSystem.draw(g2d, W, H);
@@ -589,6 +686,11 @@ public class Game2D extends JPanel implements ActionListener, KeyListener {
         switch (gameState) {
             case INTRO: case DIALOG:
                 dialogSystem.update();
+                // Update arah hadap NPC saat dialog berlangsung
+                if (currentScene == SceneIndex.POS_RONDA.getIndex())
+                    npcRadja.updateFacing(player.getX());
+                if (currentScene == SceneIndex.PEGUNUNGAN_MALAM.getIndex())
+                    npcOjol.updateFacing(player.getX());
                 if (dialogSystem.isFinished()) handleDialogFinished();
                 break;
             case CHOICE:
@@ -618,9 +720,18 @@ public class Game2D extends JPanel implements ActionListener, KeyListener {
 
     private void updatePlaying() {
         player.update();
-        if (currentScene == SceneIndex.POS_RONDA.getIndex())        npcRadja.update();
-        if (currentScene == SceneIndex.PEGUNUNGAN_MALAM.getIndex()) npcOjol.update();
-        if (currentScene == SceneIndex.DEPAN_MESJID.getIndex())     npcNasgor.update();
+        if (currentScene == SceneIndex.POS_RONDA.getIndex()) {
+            npcRadja.updateFacing(player.getX());   // Radja hadap ke arah player
+            npcRadja.update();
+        }
+        if (currentScene == SceneIndex.PEGUNUNGAN_MALAM.getIndex()) {
+            npcOjol.updateFacing(player.getX());    // Ojol hadap ke arah player
+            npcOjol.update();
+        }
+        if (currentScene == SceneIndex.DEPAN_MESJID.getIndex()) {
+            // Nasgor tidak updateFacing — selalu hadap ke satu arah
+            npcNasgor.update();
+        }
         checkRadjaTrigger();
         checkOjolTrigger();
         checkNasgorTrigger();
@@ -629,33 +740,167 @@ public class Game2D extends JPanel implements ActionListener, KeyListener {
 
     private void checkRadjaTrigger() {
         if (triggerRadja || currentScene != SceneIndex.POS_RONDA.getIndex()) return;
-        if (Math.abs(player.getX() - npcRadja.getX()) < INTERACT_DIST) {
-            triggerRadja = true;
-            choiceSystem.show("Sapa Radja  (eyy yow djaa!)", "Permisi aja, lanjut jalan");
-            gameState = GameState.CHOICE;
-            storyManager.setStage(StoryManager.StoryStage.PILIHAN_SAPA_RADJA);
+        boolean dekat = Math.abs(player.getX() - npcRadja.getX()) < INTERACT_DIST;
+        if (dekat) {
+            nearNPC    = NearNPC.RADJA;
+            ePressReady = true;
+        } else if (nearNPC == NearNPC.RADJA) {
+            nearNPC    = NearNPC.NONE;
+            ePressReady = false;
         }
     }
 
     private void checkOjolTrigger() {
         if (triggerOjol || currentScene != SceneIndex.PEGUNUNGAN_MALAM.getIndex()) return;
-        if (Math.abs(player.getX() - npcOjol.getX()) < INTERACT_DIST) {
-            triggerOjol = true;
-            npcOjol.setSpriteMode(NPCOjol.SpriteMode.PANIK);
-            choiceSystem.show("Tanya ada masalah apa", "Bodo amat, lewat aja");
-            gameState = GameState.CHOICE;
-            storyManager.setStage(StoryManager.StoryStage.PILIHAN_OJOL);
+        boolean dekat = Math.abs(player.getX() - npcOjol.getX()) < INTERACT_DIST;
+        if (dekat) {
+            nearNPC    = NearNPC.OJOL;
+            ePressReady = true;
+        } else if (nearNPC == NearNPC.OJOL) {
+            nearNPC    = NearNPC.NONE;
+            ePressReady = false;
         }
     }
 
     private void checkNasgorTrigger() {
         if (triggerNasgor || currentScene != SceneIndex.DEPAN_MESJID.getIndex()) return;
-        if (Math.abs(player.getX() - npcNasgor.getX()) < INTERACT_DIST) {
-            triggerNasgor = true;
-            npcNasgor.update();
-            dialogSystem.start(DIALOG_NASGOR_LINES, DIALOG_NASGOR_SPEAKERS);
-            gameState = GameState.DIALOG;
-            storyManager.setStage(StoryManager.StoryStage.DIALOG_NASGOR);
+        boolean dekat = Math.abs(player.getX() - npcNasgor.getX()) < INTERACT_DIST;
+        if (dekat) {
+            nearNPC    = NearNPC.NASGOR;
+            ePressReady = true;
+        } else if (nearNPC == NearNPC.NASGOR) {
+            nearNPC    = NearNPC.NONE;
+            ePressReady = false;
+        }
+    }
+
+    // ── Eksekusi interaksi saat tombol E ditekan ──────────────────────────
+    private void handleEKey() {
+        if (!ePressReady || gameState != GameState.PLAYING) return;
+
+        StoryManager.StoryStage stage = storyManager.getCurrentStage();
+
+        switch (nearNPC) {
+
+            // ── Interaksi dengan RADJA ────────────────────────────────────
+            case RADJA:
+                if (stage == StoryManager.StoryStage.PILIHAN_SAPA_RADJA) {
+                    // Bagian 1.1 — fokus Radja → trigger cerita
+                    triggerRadja = true;
+                    ePressReady  = false;
+                    nearNPC      = NearNPC.NONE;
+                    choiceSystem.show("Sapa Radja  (eyy yow djaa!)", "Permisi aja, lanjut jalan");
+                    gameState = GameState.CHOICE;
+                    storyManager.setStage(StoryManager.StoryStage.PILIHAN_SAPA_RADJA);
+                } else {
+                    // Bagian 1.2 / 1.3 — kasual sesuai mood Radja
+                    ePressReady = false;
+                    nearNPC     = NearNPC.NONE;
+                    if (storyManager.isRadjaMarah()) {
+                        // Radja marah → sprite marah
+                        npcRadja.setSpriteMode(NPCRadja.SpriteMode.MARAH);
+                        dialogSystem.start(KASUAL_12_RADJA_MARAH_LINES,
+                                           KASUAL_12_RADJA_MARAH_SPEAKERS);
+                    } else {
+                        // Radja baik → sprite bicara
+                        npcRadja.setSpriteMode(NPCRadja.SpriteMode.BICARA);
+                        dialogSystem.start(KASUAL_12_RADJA_BAIK_LINES,
+                                           KASUAL_12_RADJA_BAIK_SPEAKERS);
+                    }
+                    gameState = GameState.DIALOG;
+                    storyManager.masukDialogKasual();
+                }
+                break;
+
+            // ── Interaksi dengan OJOL ─────────────────────────────────────
+            case OJOL:
+                if (stage == StoryManager.StoryStage.PILIHAN_OJOL) {
+                    // Bagian 1.2 — fokus Ojol → trigger cerita
+                    triggerOjol  = true;
+                    ePressReady  = false;
+                    nearNPC      = NearNPC.NONE;
+                    npcOjol.setSpriteMode(NPCOjol.SpriteMode.PANIK);
+                    choiceSystem.show("Tanya ada masalah apa", "Bodo amat, lewat aja");
+                    gameState = GameState.CHOICE;
+                    storyManager.setStage(StoryManager.StoryStage.PILIHAN_OJOL);
+                } else if (isBagian11(stage)) {
+                    // Bagian 1.1 — kasual dengan Ojol
+                    ePressReady = false;
+                    nearNPC     = NearNPC.NONE;
+                    dialogSystem.start(KASUAL_11_OJOL_LINES, KASUAL_11_OJOL_SPEAKERS);
+                    gameState = GameState.DIALOG;
+                    storyManager.masukDialogKasual();
+                } else {
+                    // Bagian 1.3 — kasual dengan Ojol
+                    ePressReady = false;
+                    nearNPC     = NearNPC.NONE;
+                    dialogSystem.start(KASUAL_13_OJOL_LINES, KASUAL_13_OJOL_SPEAKERS);
+                    gameState = GameState.DIALOG;
+                    storyManager.masukDialogKasual();
+                }
+                break;
+
+            // ── Interaksi dengan NASGOR ───────────────────────────────────
+            case NASGOR:
+                if (stage == StoryManager.StoryStage.TRIGGER_NASGOR
+                        || stage == StoryManager.StoryStage.DIALOG_NASGOR) {
+                    // Bagian 1.3 — fokus Nasgor → trigger cerita
+                    triggerNasgor = true;
+                    ePressReady   = false;
+                    nearNPC       = NearNPC.NONE;
+                    dialogSystem.start(DIALOG_NASGOR_LINES, DIALOG_NASGOR_SPEAKERS);
+                    gameState = GameState.DIALOG;
+                    storyManager.setStage(StoryManager.StoryStage.DIALOG_NASGOR);
+                } else if (isBagian11(stage)) {
+                    // Bagian 1.1 — kasual dengan Nasgor
+                    ePressReady = false;
+                    nearNPC     = NearNPC.NONE;
+                    dialogSystem.start(KASUAL_11_NASGOR_LINES, KASUAL_11_NASGOR_SPEAKERS);
+                    gameState = GameState.DIALOG;
+                    storyManager.masukDialogKasual();
+                } else {
+                    // Bagian 1.2 — kasual dengan Nasgor
+                    ePressReady = false;
+                    nearNPC     = NearNPC.NONE;
+                    dialogSystem.start(KASUAL_12_NASGOR_LINES, KASUAL_12_NASGOR_SPEAKERS);
+                    gameState = GameState.DIALOG;
+                    storyManager.masukDialogKasual();
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    /**
+     * Cek apakah stage saat ini masih di bagian 1.1
+     * Bagian 1.1 = dari PILIHAN_SAPA_RADJA sampai BAD_ENDING_1_1 + DIALOG_KASUAL
+     */
+    private boolean isBagian11(StoryManager.StoryStage stage) {
+        switch (stage) {
+            case PILIHAN_SAPA_RADJA:
+            case JALAN_TANPA_RADJA:
+            case NOTIF_MANTAN_TANPA_RADJA:
+            case PILIHAN_MANTAN_TANPA_RADJA:
+            case TOLAK_MANTAN_TANPA_RADJA:
+            case TERIMA_MANTAN_TANPA_RADJA:
+            case SAPA_RADJA:
+            case OBROLAN_AWAL_RADJA:
+            case NOTIF_MANTAN_SAAT_RADJA:
+            case PILIHAN_SAAT_NOTIF:
+            case BALAS_MANTAN:
+            case PILIHAN_MANTAN_SAAT_RADJA:
+            case TOLAK_MANTAN_KEMBALI_RADJA:
+            case TERIMA_MANTAN_RADJA_MARAH:
+            case RADJA_MARAH_DIALOG:
+            case PLAYER_MINTA_MAAF_RADJA:
+            case FOKUS_RADJA:
+            case GOOD_ENDING_1_1:
+            case BAD_ENDING_1_1:
+                return true;
+            default:
+                return false;
         }
     }
 
@@ -669,10 +914,57 @@ public class Game2D extends JPanel implements ActionListener, KeyListener {
         if (px > getWidth()-60 && currentScene == SceneIndex.lastScene()) player.setX(getWidth()-60);
     }
 
+    // ── Gambar indikator [E] Bicara di atas NPC ───────────────────────────
+    private void drawInteractIndicator(Graphics2D g2d, int W, int H) {
+        // Tentukan posisi X NPC yang sedang dekat
+        int npcX;
+        String label = "[E] Bicara";
+        switch (nearNPC) {
+            case RADJA:  npcX = npcRadja.getX();   break;
+            case OJOL:   npcX = npcOjol.getX();    break;
+            case NASGOR: npcX = npcNasgor.getX();  label = "[E] Pesan"; break;
+            default: return;
+        }
+
+        int npcH    = (int)(H * 0.36);
+        int npcW    = (int)(npcH * 0.79);
+        int indicX  = npcX + npcW / 2;
+        int indicY  = H - npcH - (H / 20) - 18; // tepat di atas kepala NPC
+
+        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                             RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+        // Background pill
+        Font   font    = new Font("Arial", Font.BOLD, 12);
+        g2d.setFont(font);
+        FontMetrics fm = g2d.getFontMetrics();
+        int tw = fm.stringWidth(label);
+        int th = fm.getHeight();
+        int px = indicX - tw / 2 - 10;
+        int py = indicY - th;
+        int pw = tw + 20;
+        int ph = th + 6;
+
+        // Animasi bobbing naik turun
+        double bob    = Math.sin(System.currentTimeMillis() / 300.0) * 3;
+        int    drawY  = (int)(py + bob);
+
+        g2d.setColor(new Color(0, 0, 0, 160));
+        g2d.fillRoundRect(px - 1, drawY - 1, pw + 2, ph + 2, 10, 10);
+
+        g2d.setColor(new Color(255, 220, 80));
+        g2d.fillRoundRect(px, drawY, pw, ph, 10, 10);
+
+        g2d.setColor(new Color(30, 30, 30));
+        g2d.drawString(label, px + 10, drawY + th - 2);
+    }
+
     private void goToScene(int idx, int spawnX) {
         if (transitioning) return;
         transitionTarget = idx; transitioning = true;
         fadingOut = true; transitionAlpha = 0; pendingSpawnX = spawnX;
+        nearNPC     = NearNPC.NONE;   // reset indikator saat pindah scene
+        ePressReady = false;
     }
 
     // ═════════════════════════════════════════════════════════════════════
@@ -684,6 +976,7 @@ public class Game2D extends JPanel implements ActionListener, KeyListener {
 
             // ── Bagian 1.1 ───────────────────────────────────────────────
             case INTRO:
+                playerVisible = true;  // player baru muncul setelah cutscene intro selesai
                 gameState = GameState.PLAYING;
                 storyManager.setStage(StoryManager.StoryStage.PILIHAN_SAPA_RADJA);
                 break;
@@ -721,7 +1014,7 @@ public class Game2D extends JPanel implements ActionListener, KeyListener {
                 storyManager.setStage(StoryManager.StoryStage.NOTIF_MANTAN_SAAT_RADJA);
                 break;
             case NOTIF_MANTAN_SAAT_RADJA:
-                choiceSystem.show("Balas pesan mantan", "Abaikan, fokus ngobrol sama Radja");
+                choiceSystem.show("Abaikan, fokus ngobrol sama Radja", "Balas pesan mantan");
                 gameState = GameState.CHOICE;
                 storyManager.setStage(StoryManager.StoryStage.PILIHAN_SAAT_NOTIF);
                 break;
@@ -774,9 +1067,11 @@ public class Game2D extends JPanel implements ActionListener, KeyListener {
                 break;
             case BODO_AMAT_OJOL:
                 stressSystem.decrease(5);
-                goToScene(SceneIndex.DEPAN_MESJID.getIndex(), 60);
+                goToScene(SceneIndex.DEPAN_MESJID.getIndex(), 30);
                 gameState = GameState.DIALOG;
-                dialogSystem.start(MASUK_1_3_LINES, MASUK_1_3_SPEAKERS);
+                // Jalan sendiri → dialog cape jalan
+                dialogSystem.start(MASUK_1_3_JALAN_SENDIRI_LINES,
+                                   MASUK_1_3_JALAN_SENDIRI_SPEAKERS);
                 storyManager.setStage(StoryManager.StoryStage.MASUK_1_3);
                 break;
             case DIALOG_TANYA_OJOL:
@@ -806,10 +1101,11 @@ public class Game2D extends JPanel implements ActionListener, KeyListener {
                 break;
             case WA_TERIMAKASIH_RADJA_GOOD:
             case WA_TERIMAKASIH_RADJA_BAD:
-                // Tiba di Depan Mesjid
+                // Diantar ojol → dialog perpisahan ojol
                 goToScene(SceneIndex.DEPAN_MESJID.getIndex(), 80);
-                dialogSystem.start(MASUK_1_3_LINES, MASUK_1_3_SPEAKERS);
                 gameState = GameState.DIALOG;
+                dialogSystem.start(MASUK_1_3_NAIK_OJOL_LINES,
+                                   MASUK_1_3_NAIK_OJOL_SPEAKERS);
                 storyManager.setStage(StoryManager.StoryStage.MASUK_1_3);
                 break;
 
@@ -868,6 +1164,16 @@ public class Game2D extends JPanel implements ActionListener, KeyListener {
                 storyManager.setStage(StoryManager.StoryStage.LAYAR_BAD_ENDING);
                 break;
 
+            // ── Dialog kasual selesai → restore stage sebelumnya
+            case DIALOG_KASUAL:
+                // Kembalikan sprite Radja ke idle setelah dialog kasual
+                if (currentScene == SceneIndex.POS_RONDA.getIndex()) {
+                    npcRadja.setSpriteMode(NPCRadja.SpriteMode.IDLE);
+                }
+                storyManager.keluarDialogKasual(); // restore stage sebelumnya
+                gameState = GameState.PLAYING;
+                break;
+
             default:
                 gameState = GameState.PLAYING;
                 break;
@@ -907,16 +1213,18 @@ public class Game2D extends JPanel implements ActionListener, KeyListener {
                     : StoryManager.StoryStage.TERIMA_MANTAN_TANPA_RADJA);
                 break;
             case PILIHAN_SAAT_NOTIF:
-                storyManager.pilihanSaatNotif(!pilih1);
-                if (!pilih1) {
-                    dialogSystem.start(WA_MANTAN_SAAT_RADJA_LINES, WA_MANTAN_SAAT_RADJA_SPEAKERS);
-                    gameState = GameState.DIALOG;
-                    storyManager.setStage(StoryManager.StoryStage.BALAS_MANTAN);
-                } else {
+                storyManager.pilihanSaatNotif(pilih1);
+                if (pilih1) {
+                    // [1] Abaikan → fokus ngobrol Radja → good path
                     npcRadja.setSpriteMode(NPCRadja.SpriteMode.BICARA);
                     dialogSystem.start(FOKUS_RADJA_LINES, FOKUS_RADJA_SPEAKERS);
                     gameState = GameState.DIALOG;
                     storyManager.setStage(StoryManager.StoryStage.FOKUS_RADJA);
+                } else {
+                    // [2] Balas mantan → bad path
+                    dialogSystem.start(WA_MANTAN_SAAT_RADJA_LINES, WA_MANTAN_SAAT_RADJA_SPEAKERS);
+                    gameState = GameState.DIALOG;
+                    storyManager.setStage(StoryManager.StoryStage.BALAS_MANTAN);
                 }
                 break;
             case PILIHAN_MANTAN_SAAT_RADJA:
@@ -973,6 +1281,7 @@ public class Game2D extends JPanel implements ActionListener, KeyListener {
         if (gameState == GameState.PLAYING) {
             if (key == KeyEvent.VK_A) player.setMoveLeft(true);
             if (key == KeyEvent.VK_D) player.setMoveRight(true);
+            if (key == KeyEvent.VK_E) handleEKey();   // ← interaksi NPC
         }
         if (key == KeyEvent.VK_F11 && parentFrame != null) {
             GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment()
